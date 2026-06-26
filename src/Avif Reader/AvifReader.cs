@@ -700,9 +700,18 @@ namespace AvifFileType
                         }
                     }
 
+                    CICPColorData outputColorData = colorData with
+                    {
+                        // libavif processes the matrix as part of converting to RGB, so we should clear it for the remainder of our processing
+                        matrixCoefficients = CICPMatrixCoefficients.Identity,
+
+                        // libavif already expands to full range
+                        fullRange = true
+                    };
+
                     outputImage = new(imageSize,
                                       GetAvifReaderImageFormat(targetBitDepth, colorData),
-                                      colorData,
+                                      outputColorData,
                                       this.imagingFactory);
 
                     try
