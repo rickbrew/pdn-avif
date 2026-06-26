@@ -64,38 +64,86 @@ namespace AvifFileType
                                                       IImagingFactory imagingFactory)
                                                       where TPixel : unmanaged, INaturalPixelInfo
         {
-            using IBitmap<TPixel> source = image.Image.Cast<TPixel>();
+            using IBitmap<TPixel> imageSource = image.Image.Cast<TPixel>();
             IFileTypeDocument<TPixel> doc = factory.CreateDocument<TPixel>(image.Size);
+
+            AddAvifMetadataToDocument(doc, reader, image, imagingFactory);
 
             using IFileTypeBitmapLayer<TPixel> layer = doc.CreateBitmapLayer();
             using IFileTypeBitmapSink<TPixel> layerBitmapSink = layer.GetBitmap();
 
             PixelFormatNumericRepresentation formatRepresentation = default(TPixel).NumericRepresentation;
+            CicpColorProfile cicp = image.CICPColor;
+
+            IColorContext? colorContext = null;
+            IBitmapSource<TPixel> layerSource;
 
             if (formatRepresentation == PixelFormatNumericRepresentation.Float)
             {
-                // Floating-point formats are HDR
+                // Floating-point formats are HDR and should use linear gamma
                 if (image.HDRFormat != HDRFormat.PQ)
                 {
                     throw new FormatException($"Unsupported HDR format for PixelFormat.{default(TPixel).PixelFormat.GetName()}: {image.HDRFormat}.");
                 }
 
-                // Convert to scRGB and let PDN figure out how best to handle it (e.g. PDN 5.2 will transform to SDR BGRA32 Display P3)
-                using IColorContext scRgbColorContext = imagingFactory.CreateColorContext(KnownColorSpace.ScRgb);
-                doc.SetColorContext(scRgbColorContext);
+                // If an HDR image has an ICC profile, it is an error and should just be ignored/discarded
 
-                using IBitmapSource<TPixel> converted = source.CreateColorTransformer(DxgiColorSpace.RgbFullGamma2084NoneP2020, scRgbColorContext);
-                layerBitmapSink.WriteSource(converted);
+                if (cicp.CanCreateColorContext)
+                {
+                    // Prefer to use a color context crafted directly from CICP
+                    IColorContext sourceColorContext = imagingFactory.CreateColorContext(cicp);
+                    colorContext = imagingFactory.CreateLinearizedColorContextOrScRgb(sourceColorContext);
+                    layerSource = imageSource.CreateColorTransformer(sourceColorContext, colorContext);
+                }
+                else if (cicp.CanColorTransformFrom)
+                {
+                    // Transform to the linearized version of the color space that PDN recommends
+                    IColorContext sourceColorContext = imagingFactory.CreateColorContext(cicp.RecommendedColorSpace);
+                    colorContext = imagingFactory.CreateLinearizedColorContextOrScRgb(sourceColorContext);
+                    layerSource = imageSource.CreateColorTransformer(cicp, colorContext);
+                }
+                else
+                {
+                    // As a last resort, use sRGB and skip the color transform
+                    // This will almost certainly look wrong, but the alternative is to throw an exception and refuse to load the image
+                    colorContext = imagingFactory.CreateColorContext(KnownColorSpace.Srgb);
+                    layerSource = imageSource;
+                }
             }
             else if (formatRepresentation == PixelFormatNumericRepresentation.UnsignedInteger)
             {
-                // Integer pixel formats are SDR
+                // Integer pixel formats are SDR and generally shouldn't use linear gamma
                 if (image.HDRFormat != HDRFormat.None)
                 {
                     throw new FormatException($"Unsupported HDR format for PixelFormat.{default(TPixel).PixelFormat.GetName()}: {image.HDRFormat}.");
                 }
 
-                layerBitmapSink.WriteSource(source);
+                ReadOnlyMemory<byte> iccProfile = reader.GetICCProfile();
+                if (!iccProfile.IsEmpty && IccProfileIsRgb(iccProfile.Span))
+                {
+                    // For SDR, the ICC profile takes precedence over CICP after libavif has used CICP for decoding to RGB
+                    // https://github.com/AOMediaCodec/av1-avif/issues/84#issuecomment-626480194
+                    colorContext = imagingFactory.CreateColorContext(iccProfile.Span);
+                    layerSource = imageSource;
+                }
+                else if (cicp.CanCreateColorContext)
+                {
+                    // Prefer to use a color context crafted directly from CICP
+                    colorContext = imagingFactory.CreateColorContext(cicp);
+                    layerSource = imageSource;
+                }
+                else if (cicp.CanColorTransformFrom)
+                {
+                    // Transform to the color space that PDN recommends
+                    colorContext = imagingFactory.CreateColorContext(cicp.RecommendedColorSpace);
+                    layerSource = imageSource.CreateColorTransformer(cicp, colorContext);
+                }
+                else
+                {
+                    // As a last resort, use sRGB and skip the color transform
+                    colorContext = imagingFactory.CreateColorContext(KnownColorSpace.Srgb);
+                    layerSource = imageSource;
+                }
             }
             else
             {
@@ -103,10 +151,18 @@ namespace AvifFileType
                 throw new FormatException($"PixelFormat.{default(TPixel).PixelFormat.GetName()} is unsupported because of its numeric representation: {formatRepresentation}");
             }
 
+            layerBitmapSink.WriteSource(layerSource);
             doc.Layers.Add(layer);
-            AddAvifMetadataToDocument(doc, reader, image, imagingFactory);
+            doc.SetColorContext(colorContext);
 
             return doc;
+
+            static bool IccProfileIsRgb(ReadOnlySpan<byte> iccProfile)
+            {
+                ICCProfile.ProfileHeader header = new ICCProfile.ProfileHeader(iccProfile);
+
+                return header.ColorSpace == ICCProfile.ProfileColorSpace.Rgb;
+            }
         }
 
         private static void AddAvifMetadataToDocument(IFileTypeDocument doc,
@@ -124,7 +180,9 @@ namespace AvifFileType
 
                     if (exifValues != null)
                     {
+                        // ICC profile will be added via SetColorContext
                         exifValues.Remove(ExifPropertyKeys.Image.InterColorProfile.Path);
+
                         // The HEIF specification states that the EXIF orientation tag is only
                         // informational and should not be used to rotate the image.
                         // See https://github.com/strukturag/libheif/issues/227#issuecomment-642165942
@@ -150,13 +208,6 @@ namespace AvifFileType
                 imageGridMetadata.SerializeToPropertyBag(customTx);
             }
 
-            IColorContext? colorContext = GetColorContext(reader, image, imagingFactory);
-
-            if (colorContext != null)
-            {
-                doc.SetColorContext(colorContext);
-            }
-
             AvifItemData? xmp = reader.GetXmpData();
 
             if (xmp != null)
@@ -174,45 +225,6 @@ namespace AvifFileType
                 {
                     xmp.Dispose();
                 }
-            }
-        }
-
-        private static IColorContext? GetColorContext(AvifReader reader,
-                                                      AvifReaderImage image,
-                                                      IImagingFactory imagingFactory)
-        {
-            try
-            {
-                // HDR images will handle their own conversion from BT.2020 to scRGB
-                if (image.HDRFormat == HDRFormat.None)
-                {
-                    ReadOnlyMemory<byte> iccProfileBytes = reader.GetICCProfile();
-
-                    if (iccProfileBytes.Length > 0)
-                    {
-                        if (IccProfileIsRgb(iccProfileBytes.Span))
-                        {
-                            return imagingFactory.CreateColorContext(iccProfileBytes.Span);
-                        }
-                    }
-                    else
-                    {
-                        return ColorContextUtil.CreateFromCICPColorInfo(image.CICPColor, imagingFactory);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Do nothing
-            }
-
-            return null;
-
-            static bool IccProfileIsRgb(ReadOnlySpan<byte> iccProfile)
-            {
-                ICCProfile.ProfileHeader header = new ICCProfile.ProfileHeader(iccProfile);
-
-                return header.ColorSpace == ICCProfile.ProfileColorSpace.Rgb;
             }
         }
     }
