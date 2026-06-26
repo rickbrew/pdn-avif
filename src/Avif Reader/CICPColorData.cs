@@ -11,6 +11,8 @@
 ////////////////////////////////////////////////////////////////////////
 
 using AvifFileType.AvifContainer;
+using AvifFileType.Interop;
+using PaintDotNet.Imaging;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -63,6 +65,22 @@ namespace AvifFileType
         public static bool operator !=(CICPColorData left, CICPColorData right)
         {
             return !left.Equals(right);
+        }
+
+        public static implicit operator CICPColorData(CicpColorProfile cicp)
+        {
+            return new CICPColorData((CICPColorPrimaries)cicp.ColorPrimaries,
+                                     (CICPTransferCharacteristics)cicp.TransferCharacteristics,
+                                     (CICPMatrixCoefficients)cicp.MatrixCoefficients,
+                                     cicp.VideoFullRangeFlag == CicpVideoFullRangeFlag.Full);
+        }
+
+        public static implicit operator CicpColorProfile(CICPColorData cicp)
+        {
+            return new CicpColorProfile((CicpColorPrimaries)(byte)cicp.colorPrimaries,
+                                        (CicpTransferCharacteristics)(byte)cicp.transferCharacteristics,
+                                        (CicpMatrixCoefficients)(byte)cicp.matrixCoefficients,
+                                        (CicpVideoFullRangeFlag)cicp.fullRange.ToByte());
         }
     }
 }
