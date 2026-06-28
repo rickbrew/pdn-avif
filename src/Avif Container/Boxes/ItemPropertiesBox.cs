@@ -49,6 +49,11 @@ namespace AvifFileType.AvifContainer
             }
         }
 
+        public int PropertyCount
+        {
+            get => this.itemPropertyContainer.Count;
+        }
+
         public void AddProperty(IItemProperty property)
         {
             this.itemPropertyContainer.AddProperty(property);

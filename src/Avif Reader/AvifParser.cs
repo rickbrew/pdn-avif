@@ -61,6 +61,36 @@ namespace AvifFileType
             }
         }
 
+        public ContentLightLevelInformationBox? TryGetContentLightLevelInformationBox()
+        {
+            ItemPropertiesBox itemPropertiesBox = this.metaBox!.ItemProperties!;
+            for (int i = 1; i <= itemPropertiesBox.PropertyCount; i++)
+            {
+                IItemProperty? property = itemPropertiesBox.TryGetProperty((uint)i);
+                if (property is ContentLightLevelInformationBox clliBox)
+                {
+                    return clliBox;
+                }
+            }
+
+            return null;
+        }
+
+        public MasteringDisplayColourVolumeBox? TryGetMasteringDisplayColourVolumeBox()
+        {
+            ItemPropertiesBox itemPropertiesBox = this.metaBox!.ItemProperties!;
+            for (int i = 1; i <= itemPropertiesBox.PropertyCount; i++)
+            {
+                IItemProperty? property = itemPropertiesBox.TryGetProperty((uint)i);
+                if (property is MasteringDisplayColourVolumeBox mdcvBox)
+                {
+                    return mdcvBox;
+                }
+            }
+
+            return null;
+        }
+
         public uint GetAlphaItemId(uint primaryItemId)
         {
             uint alphaImageItemId = 0;

@@ -187,6 +187,16 @@ namespace AvifFileType
             return this.iccProfileColorInformation?.ProfileData ?? ReadOnlyMemory<byte>.Empty;
         }
 
+        public ContentLightLevelInformationBox? GetContentLightLevelInformationBox()
+        {
+            return this.parser.TryGetContentLightLevelInformationBox();
+        }
+
+        public MasteringDisplayColourVolumeBox? GetMasteringDisplayColourVolumeBox()
+        {
+            return this.parser.TryGetMasteringDisplayColourVolumeBox();
+        }
+
         public AvifItemData? GetXmpData()
         {
             VerifyNotDisposed();
@@ -245,13 +255,18 @@ namespace AvifFileType
                 // 10-bit, 12-bit or 16-bit.
                 format = AvifReaderImageFormat.Rgba64;
 
-                if (colorData.colorPrimaries == CICPColorPrimaries.BT2020)
+                if (colorData.colorPrimaries == CICPColorPrimaries.BT2020 ||
+                    colorData.colorPrimaries == CICPColorPrimaries.Smpte432)
                 {
-                    // Smpte2084 (SMPTE ST 2084, ITU BT.2100 PQ) is the only HDR format that we
+                    // Smpte2084 (SMPTE ST 2084, ITU BT.2100 PQ) and HLG are the only HDR formats that we
                     // currently support reading.
                     if (colorData.transferCharacteristics == CICPTransferCharacteristics.Smpte2084)
                     {
                         format = AvifReaderImageFormat.Rgba128FloatPQ;
+                    }
+                    else if (colorData.transferCharacteristics == CICPTransferCharacteristics.HLG)
+                    {
+                        format = AvifReaderImageFormat.Rgba128FloatHLG;
                     }
                 }
             }

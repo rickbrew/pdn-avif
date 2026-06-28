@@ -21,6 +21,7 @@ namespace AvifFileType
         public static readonly AvifReaderImageFormat Bgra32 = new(PixelFormats.Bgra32, HDRFormat.None);
         public static readonly AvifReaderImageFormat Rgba64 = new(PixelFormats.Rgba64, HDRFormat.None);
         public static readonly AvifReaderImageFormat Rgba128FloatPQ = new(PixelFormats.Rgba128Float, HDRFormat.PQ);
+        public static readonly AvifReaderImageFormat Rgba128FloatHLG = new(PixelFormats.Rgba128Float, HDRFormat.HLG);
 
         private AvifReaderImageFormat(PixelFormat pixelFormat, HDRFormat HDRFormat)
         {

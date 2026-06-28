@@ -21,6 +21,8 @@ namespace AvifFileType.AvifContainer
         public static readonly FourCC FileType = new FourCC('f', 't', 'y', 'p');
         public static readonly FourCC CleanAperture = new FourCC('c', 'l', 'a', 'p');
         public static readonly FourCC ColorInformation = new FourCC('c', 'o', 'l', 'r');
+        public static readonly FourCC ContentLightLevelInformation = new FourCC('c', 'l', 'l', 'i');
+        public static readonly FourCC MasteringDisplayColourVolume = new FourCC('m', 'd', 'c', 'v');
         public static readonly FourCC Free = new FourCC('f', 'r', 'e', 'e');
         public static readonly FourCC Handler = new FourCC('h', 'd', 'l', 'r');
         public static readonly FourCC ImageMirror = new FourCC('i', 'm', 'i', 'r');
