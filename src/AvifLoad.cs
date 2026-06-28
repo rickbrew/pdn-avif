@@ -81,12 +81,14 @@ namespace AvifFileType
             if (formatRepresentation == PixelFormatNumericRepresentation.Float)
             {
                 // Floating-point formats are HDR and should use linear gamma
-                if (image.HDRFormat != HDRFormat.PQ)
+                if (image.HDRFormat != HDRFormat.PQ && image.HDRFormat != HDRFormat.HLG)
                 {
                     throw new FormatException($"Unsupported HDR format for PixelFormat.{default(TPixel).PixelFormat.GetName()}: {image.HDRFormat}.");
                 }
 
                 // If an HDR image has an ICC profile, it is an error and should just be ignored/discarded
+
+                bool setHdrMetadata;
 
                 if (cicp.CanCreateColorContext)
                 {
@@ -94,6 +96,7 @@ namespace AvifFileType
                     IColorContext sourceColorContext = imagingFactory.CreateColorContext(cicp);
                     colorContext = imagingFactory.CreateLinearizedColorContextOrScRgb(sourceColorContext);
                     layerSource = imageSource.CreateColorTransformer(sourceColorContext, colorContext);
+                    setHdrMetadata = true;
                 }
                 else if (cicp.CanColorTransformFrom)
                 {
@@ -101,6 +104,7 @@ namespace AvifFileType
                     IColorContext sourceColorContext = imagingFactory.CreateColorContext(cicp.RecommendedColorSpace);
                     colorContext = imagingFactory.CreateLinearizedColorContextOrScRgb(sourceColorContext);
                     layerSource = imageSource.CreateColorTransformer(cicp, colorContext);
+                    setHdrMetadata = true;
                 }
                 else
                 {
@@ -108,6 +112,27 @@ namespace AvifFileType
                     // This will almost certainly look wrong, but the alternative is to throw an exception and refuse to load the image
                     colorContext = imagingFactory.CreateColorContext(KnownColorSpace.Srgb);
                     layerSource = imageSource;
+                    setHdrMetadata = false;
+                }
+
+                if (setHdrMetadata)
+                {
+                    ContentLightLevelInformationBox? clliBox = reader.GetContentLightLevelInformationBox();
+                    MasteringDisplayColourVolumeBox? mdcvBox = reader.GetMasteringDisplayColourVolumeBox();
+
+                    float maxCLL = clliBox?.MaxContentLightLevel ?? 0;
+                    float masteringMaxNits = (float)(mdcvBox?.MaxDisplayMasteringNits ?? 0);
+                    float? contentMaxLuminanceNits =
+                        maxCLL > 0 ? maxCLL :
+                        masteringMaxNits > 0 ? masteringMaxNits :
+                        (cicp.TransferCharacteristics == CicpTransferCharacteristics.AribStdB67) ? 1000 // HLG should always use 1000 instead of allowing PDN to auto-measure
+                        : null;
+
+                    using (IFileTypeHdrMetadataTransaction hdrTx = doc.Metadata.Hdr.CreateTransaction())
+                    {
+                        hdrTx.IsHdrDocument = true;
+                        hdrTx.ContentMaxLuminanceNits = contentMaxLuminanceNits;
+                    }
                 }
             }
             else if (formatRepresentation == PixelFormatNumericRepresentation.UnsignedInteger)
