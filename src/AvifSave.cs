@@ -102,7 +102,7 @@ namespace AvifFileType
                     MatrixCoefficients = cicp.ColorPrimaries.GetYCbCrMatrixCoefficients()
                 };
 
-                colorConversionInfo = cicp;
+                colorConversionInfo = cicp2;
             }
             else
             {
