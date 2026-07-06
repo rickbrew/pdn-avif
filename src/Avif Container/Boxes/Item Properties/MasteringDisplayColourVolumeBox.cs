@@ -10,6 +10,7 @@
 //
 ////////////////////////////////////////////////////////////////////////
 
+using PaintDotNet.Imaging;
 using PaintDotNet.Rendering;
 
 namespace AvifFileType.AvifContainer
@@ -81,24 +82,13 @@ namespace AvifFileType.AvifContainer
             this.minDisplayMasteringLuminance = minDisplayMasteringLuminance;
         }
 
-        public Vector2Double DisplayPrimariesG
+        public RgbPrimariesXY Primaries
         {
-            get => new Vector2Double(this.displayPrimariesGX / 50000.0, this.displayPrimariesGY / 50000.0);
-        }
-
-        public Vector2Double DisplayPrimariesB
-        {
-            get => new Vector2Double(this.displayPrimariesBX / 50000.0, this.displayPrimariesBY / 50000.0);
-        }
-
-        public Vector2Double DisplayPrimariesR
-        {
-            get => new Vector2Double(this.displayPrimariesRX / 50000.0, this.displayPrimariesRY / 50000.0);
-        }
-
-        public Vector2Double WhitePoint
-        {
-            get => new Vector2Double(this.whitePointX / 50000.0, this.whitePointY / 50000.0);
+            get => new RgbPrimariesXY(
+                new Point2Double(this.displayPrimariesRX / 50000.0, this.displayPrimariesRY / 50000.0),
+                new Point2Double(this.displayPrimariesGX / 50000.0, this.displayPrimariesGY / 50000.0),
+                new Point2Double(this.displayPrimariesBX / 50000.0, this.displayPrimariesBY / 50000.0),
+                new Point2Double(this.whitePointX / 10000.0, this.whitePointY / 10000.0));
         }
 
         public double MaxDisplayMasteringNits
