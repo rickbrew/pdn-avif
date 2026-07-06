@@ -67,7 +67,7 @@ namespace AvifFileType
             return !left.Equals(right);
         }
 
-        public static implicit operator CICPColorData(CicpColorProfile cicp)
+        public static implicit operator CICPColorData(CicpColorSpace cicp)
         {
             return new CICPColorData((CICPColorPrimaries)cicp.ColorPrimaries,
                                      (CICPTransferCharacteristics)cicp.TransferCharacteristics,
@@ -75,9 +75,9 @@ namespace AvifFileType
                                      cicp.VideoFullRangeFlag == CicpVideoFullRangeFlag.Full);
         }
 
-        public static implicit operator CicpColorProfile(CICPColorData cicp)
+        public static implicit operator CicpColorSpace(CICPColorData cicp)
         {
-            return new CicpColorProfile((CicpColorPrimaries)(byte)cicp.colorPrimaries,
+            return new CicpColorSpace((CicpColorPrimaries)(byte)cicp.colorPrimaries,
                                         (CicpTransferCharacteristics)(byte)cicp.transferCharacteristics,
                                         (CicpMatrixCoefficients)(byte)cicp.matrixCoefficients,
                                         (CicpVideoFullRangeFlag)cicp.fullRange.ToByte());

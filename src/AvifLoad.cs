@@ -73,7 +73,7 @@ namespace AvifFileType
             using IFileTypeBitmapSink<TPixel> layerBitmapSink = layer.GetBitmap();
 
             PixelFormatNumericRepresentation formatRepresentation = default(TPixel).NumericRepresentation;
-            CicpColorProfile cicp = image.CICPColor;
+            CicpColorSpace cicp = image.CICPColor;
 
             IColorContext? colorContext = null;
             IBitmapSource<TPixel> layerSource;
@@ -125,7 +125,7 @@ namespace AvifFileType
                     float? contentMaxLuminanceNits =
                         maxCLL > 0 ? maxCLL :
                         masteringMaxNits > 0 ? masteringMaxNits :
-                        (cicp.TransferCharacteristics == CicpTransferCharacteristics.AribStdB67) ? 1000 // HLG should always use 1000 instead of allowing PDN to auto-measure
+                        (cicp.TransferCharacteristics == CicpTransferCharacteristics.AribStdB67Hlg) ? 1000 // HLG should always use 1000 instead of allowing PDN to auto-measure
                         : null;
 
                     using (IFileTypeHdrMetadataTransaction hdrTx = doc.Metadata.Hdr.CreateTransaction())

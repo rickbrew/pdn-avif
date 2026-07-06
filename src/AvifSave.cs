@@ -91,13 +91,13 @@ namespace AvifFileType
 
             using IColorContext docColorContext = document.GetColorContext();
             CICPColorData colorConversionInfo;
-            if (docColorContext.TryCreateCicpColorProfile(out CicpColorProfile cicp))
+            if (docColorContext.TryCreateCicpColorSpace(out CicpColorSpace cicp))
             {
                 // If PDN can auto-detect the CICP data then use it.
                 // However, it will always set the matrix coefficients to Identity, which is only valid
                 // for lossless compression. We need the matrix coefficients that will enable YCbCr to
                 // work with lossy compression.
-                CicpColorProfile cicp2 = cicp with
+                CicpColorSpace cicp2 = cicp with
                 {
                     MatrixCoefficients = cicp.ColorPrimaries.GetYCbCrMatrixCoefficients()
                 };
