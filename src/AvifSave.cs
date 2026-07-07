@@ -91,7 +91,7 @@ namespace AvifFileType
 
             using IColorContext docColorContext = document.GetColorContext();
             CICPColorData colorConversionInfo;
-            if (docColorContext.TryCreateCicpColorSpace(out CicpColorSpace cicp))
+            if (docColorContext.TryGetCicpColorSpace(out CicpColorSpace cicp))
             {
                 // If PDN can auto-detect the CICP data then use it.
                 // However, it will always set the matrix coefficients to Identity, which is only valid
