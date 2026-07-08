@@ -12,13 +12,9 @@
 
 using AvifFileType.AvifContainer;
 using AvifFileType.Exif;
-using PaintDotNet;
-using PaintDotNet.Dxgi;
 using PaintDotNet.FileTypes;
 using PaintDotNet.Imaging;
-using PaintDotNet.Rendering;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace AvifFileType
