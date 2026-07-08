@@ -93,8 +93,12 @@ namespace AvifFileType
             CICPColorData colorConversionInfo;
             if (docColorContext.TryGetCicpColorSpace(out CicpColorSpace cicp))
             {
-                // If PDN can auto-detect the CICP data then use it.
-                // However, it will always set the matrix coefficients to Identity, which is only valid
+                // If PDN can auto-detect the CICP data then we can use it. Note that PDN will provide
+                // the CICP that best matches the ICC profile, which means it may not be an exact match.
+                // This works out fine in practice because decoders (Chrome et. al.) give the ICC
+                // profile precedence anyway.
+
+                // However, PDN will always set the matrix coefficients to Identity, which is only valid
                 // for lossless compression. We need the matrix coefficients that will enable YCbCr to
                 // work with lossy compression.
                 CicpColorSpace cicp2 = cicp with
