@@ -63,28 +63,25 @@ namespace AvifFileType
 
         public ContentLightLevelInformationBox? TryGetContentLightLevelInformationBox()
         {
-            ItemPropertiesBox itemPropertiesBox = this.metaBox!.ItemProperties!;
-            for (int i = 1; i <= itemPropertiesBox.PropertyCount; i++)
-            {
-                IItemProperty? property = itemPropertiesBox.TryGetProperty((uint)i);
-                if (property is ContentLightLevelInformationBox clliBox)
-                {
-                    return clliBox;
-                }
-            }
-
-            return null;
+            return TryGetItemPropertyBox<ContentLightLevelInformationBox>();
         }
 
         public MasteringDisplayColourVolumeBox? TryGetMasteringDisplayColourVolumeBox()
         {
+            return TryGetItemPropertyBox<MasteringDisplayColourVolumeBox>();
+        }
+
+        private TBox? TryGetItemPropertyBox<TBox>()
+            where TBox : Box, IItemProperty
+        {
             ItemPropertiesBox itemPropertiesBox = this.metaBox!.ItemProperties!;
+
             for (int i = 1; i <= itemPropertiesBox.PropertyCount; i++)
             {
                 IItemProperty? property = itemPropertiesBox.TryGetProperty((uint)i);
-                if (property is MasteringDisplayColourVolumeBox mdcvBox)
+                if (property is TBox box)
                 {
-                    return mdcvBox;
+                    return box;
                 }
             }
 
