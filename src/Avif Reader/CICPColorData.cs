@@ -78,9 +78,9 @@ namespace AvifFileType
         public static implicit operator CicpColorSpace(CICPColorData cicp)
         {
             return new CicpColorSpace((CicpColorPrimaries)(byte)cicp.colorPrimaries,
-                                        (CicpTransferCharacteristics)(byte)cicp.transferCharacteristics,
-                                        (CicpMatrixCoefficients)(byte)cicp.matrixCoefficients,
-                                        (CicpVideoFullRangeFlag)cicp.fullRange.ToByte());
+                                      (CicpTransferCharacteristics)(byte)cicp.transferCharacteristics,
+                                      (CicpMatrixCoefficients)(byte)cicp.matrixCoefficients,
+                                      (CicpVideoFullRangeFlag)cicp.fullRange.ToByte());
         }
     }
 }
