@@ -717,10 +717,10 @@ namespace AvifFileType
 
                     CICPColorData outputColorData = colorData with
                     {
-                        // libavif processes the matrix as part of converting to RGB, so we should clear it for the remainder of our processing
+                        // libaom processes the matrix as part of converting to RGB, so we should clear it for the remainder of our processing
                         matrixCoefficients = CICPMatrixCoefficients.Identity,
 
-                        // libavif already expands to full range
+                        // libaom already expands to full range
                         fullRange = true
                     };
 

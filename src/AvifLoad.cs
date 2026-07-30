@@ -142,7 +142,7 @@ namespace AvifFileType
                 ReadOnlyMemory<byte> iccProfile = reader.GetICCProfile();
                 if (!iccProfile.IsEmpty && IccProfileIsRgb(iccProfile.Span))
                 {
-                    // For SDR, the ICC profile takes precedence over CICP after libavif has used CICP for decoding to RGB
+                    // For SDR, the ICC profile takes precedence over CICP after libaom has used CICP for decoding to RGB
                     // https://github.com/AOMediaCodec/av1-avif/issues/84#issuecomment-626480194
                     colorContext = imagingFactory.CreateColorContext(iccProfile.Span);
                     layerSource = imageSource;
