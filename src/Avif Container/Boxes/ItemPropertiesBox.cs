@@ -49,6 +49,12 @@ namespace AvifFileType.AvifContainer
             }
         }
 
+        // NOTE: When using TryGetPropertyCount(), the index goes from 1 to PropertyCount, not 0 to PropertyCount-1
+        public int PropertyCount
+        {
+            get => this.itemPropertyContainer.Count;
+        }
+
         public void AddProperty(IItemProperty property)
         {
             this.itemPropertyContainer.AddProperty(property);
@@ -64,6 +70,7 @@ namespace AvifFileType.AvifContainer
             return this.itemPropertyAssociation.TryGetAssociatedProperties(itemId);
         }
 
+        // NOTE: propertyIndex starts from 1, not 0
         public IItemProperty? TryGetProperty(uint propertyIndex)
         {
             return this.itemPropertyContainer.TryGetProperty(propertyIndex);

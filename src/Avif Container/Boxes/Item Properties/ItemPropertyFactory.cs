@@ -63,6 +63,14 @@ namespace AvifFileType.AvifContainer
                     property = null;
                 }
             }
+            else if (header.Type == BoxTypes.ContentLightLevelInformation)
+            {
+                property = new ContentLightLevelInformationBox(reader, header);
+            }
+            else if (header.Type == BoxTypes.MasteringDisplayColourVolume)
+            {
+                property = new MasteringDisplayColourVolumeBox(reader, header);
+            }
             else if (header.Type == BoxTypes.PixelInformation)
             {
                 property = new PixelInformationBox(reader, header);

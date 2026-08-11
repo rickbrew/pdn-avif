@@ -20,6 +20,7 @@ using PaintDotNet.Rendering;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -88,14 +89,36 @@ namespace AvifFileType
                 losslessAlpha = losslessAlpha,
             };
 
-            // Use BT.709 with sRGB transfer characteristics as the default.
-            CICPColorData colorConversionInfo = new CICPColorData
+            using IColorContext docColorContext = document.GetColorContext();
+            CICPColorData colorConversionInfo;
+            if (docColorContext.TryGetCicpColorSpace(out CicpColorSpace cicp))
             {
-                colorPrimaries = CICPColorPrimaries.BT709,
-                transferCharacteristics = CICPTransferCharacteristics.Srgb,
-                matrixCoefficients = CICPMatrixCoefficients.BT709,
-                fullRange = true
-            };
+                // If PDN can auto-detect the CICP data then we can use it. Note that PDN will provide
+                // the CICP that best matches the ICC profile, which means it may not be an exact match.
+                // This works out fine in practice because decoders (Chrome et. al.) give the ICC
+                // profile precedence anyway.
+
+                // However, PDN will always set the matrix coefficients to Identity, which is only valid
+                // for lossless compression. We need the matrix coefficients that will enable YCbCr to
+                // work with lossy compression.
+                CicpColorSpace cicp2 = cicp with
+                {
+                    MatrixCoefficients = cicp.ColorPrimaries.GetYCbCrMatrixCoefficients()
+                };
+
+                colorConversionInfo = cicp2;
+            }
+            else
+            {
+                // Use BT.709 with sRGB transfer characteristics as the default.
+                colorConversionInfo = new CICPColorData
+                {
+                    colorPrimaries = CICPColorPrimaries.BT709,
+                    transferCharacteristics = CICPTransferCharacteristics.Srgb,
+                    matrixCoefficients = CICPMatrixCoefficients.BT709,
+                    fullRange = true
+                };
+            }
 
             if (lossless && !grayscale)
             {
@@ -104,13 +127,9 @@ namespace AvifFileType
 
                 options.yuvFormat = YUVChromaSubsampling.IdentityMatrix;
 
-                // These CICP color values are from the AV1 Bitstream & Decoding Process Specification.
-                colorConversionInfo = new CICPColorData
+                colorConversionInfo = colorConversionInfo with
                 {
-                    colorPrimaries = CICPColorPrimaries.BT709,
-                    transferCharacteristics = CICPTransferCharacteristics.Srgb,
                     matrixCoefficients = CICPMatrixCoefficients.Identity,
-                    fullRange = true
                 };
             }
 

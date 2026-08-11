@@ -66,6 +66,7 @@ namespace AvifFileType.AvifContainer
             this.properties.Add(property);
         }
 
+        // NOTE: propertyIndex starts from 1, not 0
         public IItemProperty? TryGetProperty(uint propertyIndex)
         {
             if (propertyIndex > 0 && propertyIndex <= (uint)this.properties.Count)
